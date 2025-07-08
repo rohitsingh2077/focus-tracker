@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Tracker - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto Mono', monospace;
+      background-color: #1e1e1e;
+      color: #f5f5f5;
+    }
+    header {
+      background: #282c34;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.8rem;
+      color: #61dafb;
+      font-weight: bold;
+      border-bottom: 1px solid #333;
+    }
+    .dashboard {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    .section {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .section h2 {
+      color: #f0932b;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+    }
+    form input[type="text"] {
+      width: 70%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      margin-right: 10px;
+    }
+    form button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #27ae60;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      padding: 10px;
+      background: #3a3a3a;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    li.done {
+      text-decoration: line-through;
+      color: #999;
+    }
+    .delete {
+      color: red;
+      text-decoration: none;
+      font-size: 18px;
+    }
+    .user-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .user-section span {
+      font-weight: bold;
+    }
+    .logout {
+      background-color: #e74c3c;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: white;
+      text-decoration: none;
+    }
+    .task-meta {
+      font-size: 0.85rem;
+      color: #ccc;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    ✨ Focus Dashboard ✨
+  </header>
+
+  <div class="dashboard">
+    <div class="user-section">
+      <span>Hello, {{ username }} 👋</span>
+      <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="section">
+      <h2>📝 Add New Task</h2>
+      <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Enter a new task" required>
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="section">
+      <h2>✅ Your Tasks</h2>
+      <ul id="taskList">
+        {% for task in tasks %}
+          <li data-index="{{ loop.index0 }}" class="{{ 'done' if task.done else '' }}">
+            <div>
+              <strong>{{ task.task }}</strong>
+              <div class="task-meta">{{ task.timestamp }}</div>
+            </div>
+            <div>
+              <button type="button" class="toggle">✔️</button>
+              <button type="button" class="delete">❌</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('taskForm');
+    const input = document.getElementById('taskInput');
+    const taskList = document.getElementById('taskList');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const taskText = input.value.trim();
+      if (!taskText) return;
+
+      const res = await fetch('/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ task: taskText })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div>
+            <strong>${taskText}</strong>
+            <div class="task-meta">${data.timestamp}</div>
+          </div>
+          <div>
+            <button class="toggle">✔️</button>
+            <button class="delete">❌</button>
+          </div>
+        `;
+        li.dataset.index = taskList.children.length;
+        taskList.appendChild(li);
+        input.value = '';
+        attachButtonHandlers();
+      }
+    });
+
+    function attachButtonHandlers() {
+      document.querySelectorAll('.toggle').forEach(btn => {
+        btn.onclick = async (e) => {
+          const index = e.target.closest('li').dataset.index;
+          await fetch(`/toggle/${index}`, { method: 'POST' });
+          location.reload();
+        };
+      });
+
+      document.querySelectorAll('.delete').forEach(btn => {
+        btn.onclick = async (e) => {
+          const index = e.target.closest('li').dataset.index;
+          await fetch(`/delete/${index}`, { method: 'POST' });
+          location.reload();
+        };
+      });
+    }
+
+    attachButtonHandlers();
+  </script>
+</body>
+</html>
