@@ -61,17 +61,6 @@ focus-tracker/
 ├── static/               # Optional CSS/JS
 │   └── style.css
 └── README.md
-```
-
----
-
-## Notes
-
-* The database file `focus.db` is ignored in `.gitignore`. Add your own on first run.
-* Task and user data will persist in SQLite until deleted.
-* You can easily extend this app with due dates, filters, or deploy it to platforms like **Render** or **Railway**.
-
----
 
 ## License
 
